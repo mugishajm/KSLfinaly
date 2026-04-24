@@ -18,6 +18,8 @@ env.bak/
 venv.bak/
 .venv/
 .env/
+.env
+.env.*
 
 # Install logs
 pip-log.txt

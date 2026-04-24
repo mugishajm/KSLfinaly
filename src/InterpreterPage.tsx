@@ -286,14 +286,21 @@ export default function InterpreterPage() {
       });
       const backendError = s.error || p.error || "";
       if (backendError) {
-        setError(`Backend model failed: ${backendError}`);
+        setError(
+          `Sign model unavailable on server: ${backendError} ` +
+          `(Auth can still work; camera/sign detection needs a MediaPipe-compatible backend runtime.)`
+        );
       } else if (!camRef.current) {
         setError("");
       }
     } catch (e) {
       if (!camRef.current) {
         const net = e instanceof TypeError && String(e.message).toLowerCase().includes("fetch");
-        setError(net ? "Cannot reach API — run: python api_server.py" : (e instanceof Error ? e.message : "API error"));
+        setError(
+          net
+            ? "Cannot reach backend API. Check https://ksl-be-ftj9.onrender.com/api/health."
+            : (e instanceof Error ? e.message : "API error")
+        );
       }
     }
   };

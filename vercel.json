@@ -7,6 +7,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://ksl-be-ftj9.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
