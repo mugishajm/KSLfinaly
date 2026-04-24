@@ -74,6 +74,7 @@ interface AnalyzeFrameResponse {
   confidence?: number;
   hold_progress?: number;
   hold_seconds_required?: number;
+  error?: string;
 }
 
 async function getUserMediaWithFallbacks(): Promise<MediaStream> {
@@ -360,7 +361,27 @@ export default function InterpreterPage() {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ image }),
         });
-        if (!r.ok) return;
+        if (!r.ok) {
+          if (r.status === 503) {
+            let backendMsg = "Sign model is unavailable on backend.";
+            try {
+              const err = (await r.json()) as { error?: string };
+              if (err?.error) backendMsg = err.error;
+            } catch {
+              // ignore parse errors and use fallback message
+            }
+            setError(`Sign detection unavailable: ${backendMsg}`);
+            streamRef.current?.getTracks().forEach(t => t.stop());
+            streamRef.current = null;
+            if (videoRef.current) {
+              videoRef.current.pause();
+              videoRef.current.srcObject = null;
+            }
+            camRef.current = false;
+            setCameraActive(false);
+          }
+          return;
+        }
         const data = (await r.json()) as AnalyzeFrameResponse;
         setPrediction((prev) => ({
           ...prev,
@@ -386,12 +407,32 @@ export default function InterpreterPage() {
         videoRef.current.play().catch(() => { });
       }
       camRef.current = true; setCameraActive(true);
-      await fetch(`${API_BASE}/start`, {
+      const startResponse = await fetch(`${API_BASE}/start`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode: "letter" }),
       });
+      if (!startResponse.ok) {
+        let backendMsg = `Backend returned ${startResponse.status}`;
+        try {
+          const err = (await startResponse.json()) as { error?: string };
+          if (err?.error) backendMsg = err.error;
+        } catch {
+          // fallback is enough
+        }
+        throw new Error(backendMsg);
+      }
       void refresh();
-    } catch (e) { setError(e instanceof Error ? e.message : "Camera failed"); }
+    } catch (e) {
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.srcObject = null;
+      }
+      camRef.current = false;
+      setCameraActive(false);
+      setError(e instanceof Error ? e.message : "Camera failed");
+    }
     setLoading(false);
   };
 

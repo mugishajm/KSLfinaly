@@ -2,7 +2,9 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useLanguage, type Language } from "@/context/LanguageContext";
 import { Play, Check, Plus } from "lucide-react";
-import heroImg from "@/assets/hero.png";
+import heroImg1 from "C:/Users/lenovo/.gemini/antigravity/brain/6b7eefe3-d7af-4698-bd49-e6fc0e5e8909/marketing_hero_1777047467594.png";
+import heroImg2 from "C:/Users/lenovo/.gemini/antigravity/brain/6b7eefe3-d7af-4698-bd49-e6fc0e5e8909/marketing_about_1777047493841.png";
+import heroImg3 from "C:/Users/lenovo/.gemini/antigravity/brain/6b7eefe3-d7af-4698-bd49-e6fc0e5e8909/marketing_demo_1777047520057.png";
 import kslLogo from "@/assets/ksl-logo.png";
 
 const languageContent: Record<
@@ -205,7 +207,7 @@ const HeroSection = () => {
                <div className="flex gap-[18px] lg:gap-5 flex-col xs:flex-row order-2 md:order-2 border-none">
                  {/* Card 2: Photo Square */}
                  <div className="w-[300px] xs:w-[190px] lg:w-[200px] h-[200px] lg:h-[220px] rounded-[24px] overflow-hidden transition-transform hover:-translate-y-2 shrink-0 border-none">
-                    <img src={heroImg} className="w-full h-full object-cover scale-[1.1] border-none" alt="User looking at window" />
+                    <img src={heroImg2} className="w-full h-full object-cover scale-[1.1] border-none" alt="User presenting KSL" />
                  </div>
 
                  {/* Card 3: Solid KSL Blue text card */}
@@ -262,7 +264,7 @@ const HeroSection = () => {
 
                  {/* Card 5: Tall Image with Play Button */}
                  <div className="w-[300px] md:w-[230px] lg:w-[250px] h-[370px] lg:h-[390px] rounded-[24px] overflow-hidden shadow-md relative transition-transform hover:-translate-y-2 shrink-0 group bg-[#090b10] border-none">
-                    <img src={heroImg} className="w-full h-full object-cover scale-[1.05] opacity-80 border-none" alt="Video demo" />
+                    <img src={heroImg3} className="w-full h-full object-cover scale-[1.05] opacity-80 border-none" alt="Video demo" />
                     
                     <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/80 pointer-events-none border-none"></div>
                     

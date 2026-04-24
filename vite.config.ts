@@ -10,6 +10,7 @@ export default defineConfig({
     },
   },
   server: {
+    fs: { strict: false },
     host: "::",
     port: 5173,
     proxy: {
