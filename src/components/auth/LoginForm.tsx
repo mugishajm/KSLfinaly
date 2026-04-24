@@ -8,9 +8,10 @@ import { useLanguage } from "@/context/LanguageContext";
 import kslLogo from "@/assets/ksl-logo.png";
 
 const API_URL = (() => {
-  const raw = import.meta.env.VITE_API_URL as string | undefined;
+  // Keep auth API base aligned with the rest of the app.
+  const raw = import.meta.env.VITE_API_BASE_URL as string | undefined;
   if (raw && raw.trim()) return raw.replace(/\/$/, "");
-  return window.location.origin;
+  return "https://ksl-be-ftj9.onrender.com";
 })();
 
 function parseJsonOrNull(response: Response): Promise<Record<string, unknown> | null> {
