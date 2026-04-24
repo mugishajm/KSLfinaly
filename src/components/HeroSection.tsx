@@ -2,9 +2,9 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useLanguage, type Language } from "@/context/LanguageContext";
 import { Play, Check, Plus } from "lucide-react";
-import heroImg1 from "C:/Users/lenovo/.gemini/antigravity/brain/6b7eefe3-d7af-4698-bd49-e6fc0e5e8909/marketing_hero_1777047467594.png";
-import heroImg2 from "C:/Users/lenovo/.gemini/antigravity/brain/6b7eefe3-d7af-4698-bd49-e6fc0e5e8909/marketing_about_1777047493841.png";
-import heroImg3 from "C:/Users/lenovo/.gemini/antigravity/brain/6b7eefe3-d7af-4698-bd49-e6fc0e5e8909/marketing_demo_1777047520057.png";
+import heroImg1 from "@/assets/marketing_hero.png";
+import heroImg2 from "@/assets/marketing_about.png";
+import heroImg3 from "@/assets/marketing_demo.png";
 import kslLogo from "@/assets/ksl-logo.png";
 
 const languageContent: Record<
