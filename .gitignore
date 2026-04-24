@@ -67,3 +67,5 @@ dmypy.json
 
 #Pickle files
 *.pkl
+.vercel
+.env*.local

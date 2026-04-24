@@ -8,7 +8,8 @@ import { useLanguage } from "./context/LanguageContext";
 const API_BASE = (() => {
   const raw = import.meta.env.VITE_API_BASE_URL as string | undefined;
   if (raw !== undefined && raw !== "") return `${raw.replace(/\/$/, "")}/api`;
-  return "/api";
+  // Default production backend (Render). Keeps working even if env var isn't set.
+  return "https://ksl-be-ftj9.onrender.com/api";
 })();
 
 // Icons
