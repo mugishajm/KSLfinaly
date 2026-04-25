@@ -228,6 +228,7 @@ export default function InterpreterPage() {
   const [signPreviewNote, setSignPreviewNote] = useState("");
 
   const recognitionRef = useRef<any>(null);
+  const sessionIdRef = useRef<string>("");
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -268,11 +269,21 @@ export default function InterpreterPage() {
   const camRef = useRef(false);
   const translateSeqRef = useRef(0);
 
+  const apiFetch = useCallback(
+    async (path: string, init?: RequestInit): Promise<Response> => {
+      const headers = new Headers(init?.headers || {});
+      const sid = sessionIdRef.current;
+      if (sid) headers.set("X-Session-Id", sid);
+      return fetch(`${API_BASE}${path}`, { ...init, headers });
+    },
+    []
+  );
+
   const getJson = useCallback(async <T,>(path: string): Promise<T> => {
-    const r = await fetch(`${API_BASE}${path}`);
+    const r = await apiFetch(path);
     if (!r.ok) throw new Error(`${r.status}`);
     return r.json() as Promise<T>;
-  }, []);
+  }, [apiFetch]);
 
   const refresh = useCallback(async () => {
     try {
@@ -325,7 +336,7 @@ export default function InterpreterPage() {
     let cancelled = false;
     void (async () => {
       try {
-        const r = await fetch(`${API_BASE}/start`, {
+        const r = await apiFetch(`/start`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ mode: "letter" }),
@@ -389,7 +400,7 @@ export default function InterpreterPage() {
       ctx.drawImage(vid, 0, 0, can.width, can.height);
       const image = can.toDataURL("image/jpeg", 0.9);
       try {
-        const r = await fetch(`${API_BASE}/analyze-frame`, {
+        const r = await apiFetch(`/analyze-frame`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ image }),
         });
@@ -462,6 +473,8 @@ export default function InterpreterPage() {
         }
         throw new Error(backendMsg);
       }
+      const started = (await startResponse.json().catch(() => ({}))) as { session_id?: string };
+      if (started?.session_id) sessionIdRef.current = started.session_id;
       void refresh();
     } catch (e) {
       streamRef.current?.getTracks().forEach(t => t.stop());
@@ -480,7 +493,8 @@ export default function InterpreterPage() {
   const stopInterpreter = async () => {
     setLoading(true);
     try {
-      await fetch(`${API_BASE}/stop`, { method: "POST" });
+      await apiFetch(`/stop`, { method: "POST" });
+      sessionIdRef.current = "";
       streamRef.current?.getTracks().forEach(t => t.stop()); streamRef.current = null;
       if (videoRef.current) { videoRef.current.pause(); videoRef.current.srcObject = null; }
       camRef.current = false; setCameraActive(false);
@@ -489,9 +503,9 @@ export default function InterpreterPage() {
     setLoading(false);
   };
 
-  const commitLetter = () => fetch(`${API_BASE}/commit-letter`, { method: "POST" }).then(() => refresh()).catch(() => { });
-  const commitSpace = () => fetch(`${API_BASE}/commit-space`, { method: "POST" }).then(() => refresh()).catch(() => { });
-  const clearText = () => fetch(`${API_BASE}/clear`, { method: "POST" }).then(() => refresh()).catch(() => { });
+  const commitLetter = () => apiFetch(`/commit-letter`, { method: "POST" }).then(() => refresh()).catch(() => { });
+  const commitSpace = () => apiFetch(`/commit-space`, { method: "POST" }).then(() => refresh()).catch(() => { });
+  const clearText = () => apiFetch(`/clear`, { method: "POST" }).then(() => refresh()).catch(() => { });
 
   const fetchFingerSpelling = async () => {
     await fetchFingerSpellingExplicit(textInput);
