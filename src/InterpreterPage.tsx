@@ -82,6 +82,15 @@ const isLoadingMessage = (msg: string): boolean => {
   return lower.includes("still loading") || lower.includes("loading");
 };
 
+const isSessionMessage = (msg: string): boolean => {
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes("session_id") ||
+    lower.includes("unknown or expired session") ||
+    lower.includes("missing session")
+  );
+};
+
 async function getUserMediaWithFallbacks(): Promise<MediaStream> {
   const attempts: MediaStreamConstraints[] = [
     { video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }, audio: false },
@@ -303,6 +312,11 @@ export default function InterpreterPage() {
       });
       const backendError = s.error || p.error || "";
       if (backendError) {
+        if (isSessionMessage(backendError) && !camRef.current) {
+          // No active camera/session yet; keep UI clean.
+          setError("");
+          return;
+        }
         setError(
           `Sign model unavailable on server: ${backendError} ` +
           `(Auth can still work; camera/sign detection needs a MediaPipe-compatible backend runtime.)`
@@ -342,6 +356,8 @@ export default function InterpreterPage() {
           body: JSON.stringify({ mode: "letter" }),
         });
         if (!r.ok) return;
+        const started = (await r.json().catch(() => ({}))) as { session_id?: string };
+        if (started?.session_id) sessionIdRef.current = started.session_id;
         if (!cancelled) {
           setError("");
           void refresh();
@@ -426,6 +442,20 @@ export default function InterpreterPage() {
             }
             camRef.current = false;
             setCameraActive(false);
+          }
+          if (r.status === 400 || r.status === 404 || r.status === 409) {
+            let backendMsg = "";
+            try {
+              const err = (await r.json()) as { error?: string };
+              backendMsg = err?.error || "";
+            } catch {
+              // ignore parse errors
+            }
+            if (isSessionMessage(backendMsg)) {
+              setError("Reconnecting camera session...");
+              sessionIdRef.current = "";
+              void refresh();
+            }
           }
           return;
         }
