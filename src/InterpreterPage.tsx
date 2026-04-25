@@ -77,6 +77,11 @@ interface AnalyzeFrameResponse {
   error?: string;
 }
 
+const isLoadingMessage = (msg: string): boolean => {
+  const lower = msg.toLowerCase();
+  return lower.includes("still loading") || lower.includes("loading");
+};
+
 async function getUserMediaWithFallbacks(): Promise<MediaStream> {
   const attempts: MediaStreamConstraints[] = [
     { video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" }, audio: false },
@@ -269,7 +274,7 @@ export default function InterpreterPage() {
     return r.json() as Promise<T>;
   }, []);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     try {
       const [s, l, p] = await Promise.all([
         getJson<ApiStatus>("/status"),
@@ -304,13 +309,40 @@ export default function InterpreterPage() {
         );
       }
     }
-  };
+  }, [getJson]);
 
   useEffect(() => {
     void refresh();
     const id = setInterval(() => void refresh(), 2000);
     return () => clearInterval(id);
-  }, []);
+  }, [refresh]);
+
+  // If user already opened camera while backend was warming up, auto-start once ready.
+  useEffect(() => {
+    if (!cameraActive) return;
+    if (status.backend !== "ready") return;
+    if (status.status === "running") return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const r = await fetch(`${API_BASE}/start`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: "letter" }),
+        });
+        if (!r.ok) return;
+        if (!cancelled) {
+          setError("");
+          void refresh();
+        }
+      } catch {
+        // status polling will continue and user can retry manually.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [cameraActive, status.backend, status.status, refresh]);
 
   useEffect(() => {
     if (activeTab !== "sign-to-text") return;
@@ -370,6 +402,10 @@ export default function InterpreterPage() {
             } catch {
               // ignore parse errors and use fallback message
             }
+            if (isLoadingMessage(backendMsg)) {
+              setError("Backend is warming up. Keep camera open; detection will start automatically.");
+              return;
+            }
             setError(`Sign detection unavailable: ${backendMsg}`);
             streamRef.current?.getTracks().forEach(t => t.stop());
             streamRef.current = null;
@@ -418,6 +454,11 @@ export default function InterpreterPage() {
           if (err?.error) backendMsg = err.error;
         } catch {
           // fallback is enough
+        }
+        if (startResponse.status === 503 && isLoadingMessage(backendMsg)) {
+          setError("Backend is still loading model. Camera is ready; detection will begin automatically.");
+          setLoading(false);
+          return;
         }
         throw new Error(backendMsg);
       }
